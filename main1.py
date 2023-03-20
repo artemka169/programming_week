@@ -15,14 +15,12 @@ pd.options.mode.chained_assignment = None  # default='warn'
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # Reading data
-# The first table provides average fatal production and consumption values, as well as the standard deviation
-# The second table provides the distribution of consumption and fatal production throughout the day
 prod_conso_fatale_day = pd.read_csv("datasets/prod_conso_fatale_day.csv")
 prod_conso_fatale_H = pd.read_csv("datasets/prod_conso_fatale_H.csv")
 prod_pilotable = pd.read_csv("datasets/prod_pilotable.csv", sep=";")
 prix_commo = pd.read_csv("datasets/prix_commodites.csv")
 
-# On simule l'année 2021 pour exemple
+# Example of 2023-2024
 date_range = pd.date_range(start="2023-10-01", end="2024-10-01")
 print(date_range)
 result = pd.DataFrame(columns=('Date', 'Heure', 'Prix', 'Consommation', 'Production'))

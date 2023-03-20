@@ -29,9 +29,6 @@ def prix_com_changes():
     data.to_csv("datasets/prix_commodites_modified.csv", index=False)
 
 
-
-import pandas as pd
-
 def prod_conso_fatale_day_changes():
     data_day = pd.read_csv("datasets/prod_conso_fatale_day.csv")
 
@@ -44,117 +41,89 @@ def prod_conso_fatale_day_changes():
     renewable_increase = 0.1
     nuclear_increase = 0.05
 
+    # Additional percentage increases for 'fil_eau', 'lac', 'cogeneration', and 'consommation'
+    fil_eau_increase = 0.02
+    lac_increase = 0.03
+    cogeneration_increase = 0.04
+    consommation_increase = 0.03
+
     # Define the time horizon for the analysis (1 year)
     time_horizon_weeks = 52
 
-    # Get the unique technologies in the dataset
-    technologies = data_day['techno'].unique()
-
     # Modify the dataset
     for i in range(time_horizon_weeks):
-        week_data = data_day[data_day['week'] == i + 1]
+        for index, row in data_day.iterrows():
+            if row['week'] == i + 1:
+                tech = row['techno']
+                if tech in ['gas', 'coal', 'oil']:
+                    increase = {'gas': gas_price_increase, 'coal': coal_price_increase, 'oil': oil_price_increase}[tech]
+                elif tech in ['solaire', 'eolien', 'nucleaire']:
+                    increase = renewable_increase if tech in ['solaire', 'eolien'] else nuclear_increase
+                elif tech == 'fil_eau':
+                    increase = fil_eau_increase
+                elif tech == 'lac':
+                    increase = lac_increase
+                elif tech == 'cogeneration':
+                    increase = cogeneration_increase
+                elif tech == 'consommation':
+                    increase = consommation_increase
+                else:
+                    continue
 
-        # Gradually increase the prices of gas, coal, and oil over the time horizon
-        if 'gas' in technologies:
-            week_data.loc[week_data['techno'] == 'gas', 'moyenne'] *= (1 + (i / time_horizon_weeks) * (gas_price_increase - 1))
-        if 'coal' in technologies:
-            week_data.loc[week_data['techno'] == 'coal', 'moyenne'] *= (1 + (i / time_horizon_weeks) * (coal_price_increase - 1))
-        if 'oil' in technologies:
-            week_data.loc[week_data['techno'] == 'oil', 'moyenne'] *= (1 + (i / time_horizon_weeks) * (oil_price_increase - 1))
-
-        # Gradually increase the consumption of renewables and nuclear energy
-        if 'solaire' in technologies:
-            week_data.loc[week_data['techno'] == 'solaire', 'moyenne'] *= (1 + (i / time_horizon_weeks) * renewable_increase)
-        if 'eolien' in technologies:
-            week_data.loc[week_data['techno'] == 'eolien', 'moyenne'] *= (1 + (i / time_horizon_weeks) * renewable_increase)
-        if 'nucleaire' in technologies:
-            week_data.loc[week_data['techno'] == 'nucleaire', 'moyenne'] *= (1 + (i / time_horizon_weeks) * nuclear_increase)
-
-        data_day.update(week_data)
+                data_day.at[index, 'moyenne'] *= (1 + (i / time_horizon_weeks) * increase)
 
     data_day.to_csv("datasets/prod_conso_fatale_day_modified.csv", index=False)
 
 
+def prod_conso_fatale_hour_changes():
+    # Read the original dataset
+    data_hour = pd.read_csv('datasets/prod_conso_fatale_H.csv')
 
-
-def prod_conso_fatale_H_changes():
-    data_hourly = pd.read_csv("datasets/prod_conso_fatale_H.csv")
-
-    # Define the increase factors for different energy sources
-    gas_price_increase = 1.5
-    coal_price_increase = 1.4
-    oil_price_increase = 1.3
-
-    # Define the percentage increase in renewables and other energy sources
-    renewable_increase = 0.1
-    nuclear_increase = 0.05
-
-    # Define the time horizon for the analysis (1 year)
+    # Define the increase factors for each technology
+    solaire_increase = 0.1
+    eolien_increase = 0.15
+    nucleaire_increase = 0.05
+    fil_eau_increase = 0.02
+    lac_increase = 0.03
+    cogeneration_increase = 0.04
+    consommation_increase = 0.01
     time_horizon_weeks = 52
 
-    # Get the unique technologies in the dataset
-    technologies = data_hourly['techno'].unique()
+    # Apply the increase factors
+    for i in range(1, time_horizon_weeks + 1):
+        week_data = data_hour[data_hour['week'] == i]
 
-    # Modify the dataset
-    for i in range(time_horizon_weeks):
-        for j in range(7):
-            for k in range(24):
-                hourly_data = data_hourly[(data_hourly['week'] == i + 1) & (data_hourly['day'] == j + 1) & (data_hourly['hour'] == k)]
+        for tech, increase in [("solaire", solaire_increase), ("eolien", eolien_increase), ("nucleaire", nucleaire_increase),
+                              ("fil_eau", fil_eau_increase), ("lac", lac_increase), ("cogeneration", cogeneration_increase),
+                              ("consommation", consommation_increase)]:
+            data_hour.loc[(data_hour['week'] == i) & (data_hour['techno'] == tech), 'value'] *= (1 + (i / time_horizon_weeks) * increase)
 
-                # Gradually increase the prices of gas, coal, and oil over the time horizon
-                if 'gas' in technologies:
-                    hourly_data.loc[hourly_data['techno'] == 'gas', 'value'] *= (1 + (i / time_horizon_weeks) * (gas_price_increase - 1))
-                if 'coal' in technologies:
-                    hourly_data.loc[hourly_data['techno'] == 'coal', 'value'] *= (1 + (i / time_horizon_weeks) * (coal_price_increase - 1))
-                if 'oil' in technologies:
-                    hourly_data.loc[hourly_data['techno'] == 'oil', 'value'] *= (1 + (i / time_horizon_weeks) * (oil_price_increase - 1))
-
-                # Gradually increase the consumption of renewables and nuclear energy
-                if 'solaire' in technologies:
-                    hourly_data.loc[hourly_data['techno'] == 'solaire', 'value'] *= (1 + (i / time_horizon_weeks) * renewable_increase)
-                if 'eolien' in technologies:
-                    hourly_data.loc[hourly_data['techno'] == 'eolien', 'value'] *= (1 + (i / time_horizon_weeks) * renewable_increase)
-                if 'nucleaire' in technologies:
-                    hourly_data.loc[hourly_data['techno'] == 'nucleaire', 'value'] *= (1 + (i / time_horizon_weeks) * nuclear_increase)
-
-                # Update the main dataset
-                data_hourly.update(hourly_data)
-
-    # Save the modified dataset
-    data_hourly.to_csv("datasets/prod_conso_fatale_H_modified.csv", index=False)
+    # Save the updated dataset
+    data_hour.to_csv('datasets/prod_conso_fatale_H_updated.csv', index=False)
 
 
-def modify_prod_pilotable():
-    data_pilotable = pd.read_csv("datasets/prod_pilotable.csv", delimiter=';')
+def update_prod_pilotable():
 
-    # Define the increase factors for different energy sources
-    gas_price_increase = 1.5
-    coal_price_increase = 1.4
-    oil_price_increase = 1.3
+    increase_factors = {
+    'ccgt': -0.02,
+    'tac gaz': -0.03,
+    'tac fioul': -0.04,
+    'charbon': -0.05,
+    'interconnexion_1': -0.05,
+    'interconnexion_2': -0.05,
+    'interconnexion_3': -0.05,
+    'interconnexion_4': -0.05,
+}
+    pilotable_data = pd.read_csv('datasets/prod_pilotable.csv', delimiter=';', index_col='techno')
 
-    # Define the percentage increase in renewables and other energy sources
-    renewable_increase = 0.1
-    nuclear_increase = 0.05
+    for tech, increase in increase_factors.items():
+        if tech in pilotable_data.index:
+            pilotable_data.loc[tech, 'puissance'] *= (1 + increase)
 
-    # Define the time horizon for the analysis (1 year)
-    time_horizon_weeks = 52
-
-    # Modify the dataset
-    for i in range(time_horizon_weeks):
-        # Gradually increase the prices of gas, coal, and oil over the time horizon
-        data_pilotable.loc[data_pilotable['techno'] == 'ccgt', 'Gaz'] *= (1 + (i / time_horizon_weeks) * (gas_price_increase - 1))
-        data_pilotable.loc[data_pilotable['techno'] == 'tac gaz', 'Gaz'] *= (1 + (i / time_horizon_weeks) * (gas_price_increase - 1))
-        data_pilotable.loc[data_pilotable['techno'] == 'tac fioul', 'Brent'] *= (1 + (i / time_horizon_weeks) * (oil_price_increase - 1))
-        data_pilotable.loc[data_pilotable['techno'] == 'charbon', 'Charbon'] *= (1 + (i / time_horizon_weeks) * (coal_price_increase - 1))
-
-        # Gradually increase the consumption of renewables and nuclear energy
-        # The example dataset doesn't include renewable energy sources or nuclear energy, so there's no need to modify them here
-
-    # Save the modified dataset
-    data_pilotable.to_csv("datasets/prod_pilotable_modified.csv", index=False, sep=';')
+    pilotable_data.to_csv('datasets/prod_pilotable_updated.csv', sep=';', index_label='techno')
 
 
 prix_com_changes()
 prod_conso_fatale_day_changes()
-# prod_conso_fatale_H_changes()
-# modify_prod_pilotable()
+prod_conso_fatale_hour_changes()
+update_prod_pilotable()
