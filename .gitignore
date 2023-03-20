@@ -1,0 +1,9 @@
+__pycache__/
+.spyproject
+*.egg-info
+*.pyc
+.idea
+venv
+build
+datasets
+main.py
